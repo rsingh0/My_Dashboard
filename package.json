@@ -1,0 +1,27 @@
+{
+  "name": "my_dashboard",
+  "version": "1.0.0",
+  "description": "Custom Dashboard by Robin",
+  "main": "handler.js",
+  "scripts": {
+    "test": "echo \"ByPass: no test specified\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rsingh0/My_Dashboard.git"
+  },
+  "keywords": [],
+  "author": "Robin Singh",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.18.0",
+    "@aws-sdk/util-dynamodb": "^3.18.0"
+  },
+  "devDependencies": {
+    "serverless-iam-roles-per-function": "^3.2.0"
+  },
+  "bugs": {
+    "url": "https://github.com/rsingh0/My_Dashboard/issues"
+  },
+  "homepage": "https://github.com/rsingh0/My_Dashboard#readme"
+}

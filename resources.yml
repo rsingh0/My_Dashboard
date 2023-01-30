@@ -1,0 +1,12 @@
+# Todos DynamoDB Table
+todosTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: todos-${self:provider.stage}
+    BillingMode: PAY_PER_REQUEST
+    AttributeDefinitions:
+      - AttributeName: noteId
+        AttributeType: N
+    KeySchema:
+      - AttributeName: noteId
+        KeyType: HASH

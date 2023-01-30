@@ -1,0 +1,109 @@
+service: my-dashboard
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: ${opt:stage, 'dev'}
+  region: us-east-1
+  environment:
+    DYNAMODB_TABLE_NAME: !Ref todosTable
+
+# serverless plugin to associate IAM role per lamda function
+plugins:
+  - serverless-iam-roles-per-function
+
+functions:
+
+  getNote:
+    handler: lamdas/api/todo.getNote
+    name: get-note
+    memorySize: 128 # mb
+    timeout: 5 # sec
+    environment:
+      # Reusing http connections by lamda function to reduce TLS handshake latency (keep-alive)
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          path: notes/{noteId}
+          method: GET
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:GetItem"
+        Resource: !GetAtt todosTable.Arn
+
+  getAllNotesByUser:
+    handler: lamdas/api/todo.getAllNotesByUser
+    name: get-all-note-by-user
+    memorySize: 128 # mb
+    timeout: 5 # sec
+    environment:
+      # Reusing http connections by lamda function to reduce TLS handshake latency (keep-alive)
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          path: notes/user/{userId}
+          method: GET
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:Query"
+        Resource: !GetAtt todosTable.Arn
+
+  createNote:
+    handler: lamdas/api/todo.createNote
+    name: create-note
+    memorySize: 128 # mb
+    timeout: 5 # sec
+    environment:
+      # Reusing http connections by lamda function to reduce TLS handshake latency (keep-alive)
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          path: notes
+          method: POST
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:PutItem"
+        Resource: !GetAtt todosTable.Arn
+
+  updateNote:
+    handler: lamdas/api/todo.updateNote
+    name: update-note
+    memorySize: 128 # mb
+    timeout: 5 # sec
+    environment:
+      # Reusing http connections by lamda function to reduce TLS handshake latency (keep-alive)
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          path: notes/{noteId}
+          method: PUT
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:UpdateItem"
+        Resource: !GetAtt todosTable.Arn
+
+  deleteNote:
+    handler: lamdas/api/todo.deleteNote
+    name: delete-note
+    memorySize: 128 # mb
+    timeout: 5 # sec
+    environment:
+      # Reusing http connections by lamda function to reduce TLS handshake latency (keep-alive)
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          path: notes/{noteId}
+          method: DELETE
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:DeleteItem"
+        Resource: !GetAtt todosTable.Arn
+
+resources:
+  Resources: ${file(resources.yml)}
