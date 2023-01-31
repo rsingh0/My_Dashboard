@@ -7,7 +7,7 @@ phases:
       nodejs: 14
     commands:
       - echo Installing serverless CLI
-      - npm i -g serverless@
+      - npm i -g serverless
       - echo Installing npm dependencies of dashboard service
       - npm install
   build:
