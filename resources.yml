@@ -10,3 +10,64 @@ todosTable:
     KeySchema:
       - AttributeName: noteId
         KeyType: HASH
+
+# Weather DynamoDB Table
+weatherTable:
+  Type: AWS::DynamoDB::Table
+  Properties:
+    TableName: weather-${self:provider.stage}
+    BillingMode: PAY_PER_REQUEST
+    AttributeDefinitions:
+      - AttributeName: city
+        AttributeType: S
+    KeySchema:
+      - AttributeName: city
+        KeyType: HASH        
+
+EventBus:
+  Type: AWS::Events::EventBus
+  Properties:
+    Name: MAIN_EVENT_BUS
+
+WeatherTargetSQS:
+  Type: AWS::SQS::Queue
+  Properties:
+    QueueName: WEATHER_QUEUE
+    RedrivePolicy:
+      deadLetterTargetArn: !GetAtt WeatherTargetDLQ.Arn
+      maxReceiveCount: 2
+
+WeatherTargetDLQ:
+  Type: AWS::SQS::Queue
+  Properties:
+    QueueName: WEATHER_DLQ
+
+WeatherSQSRule:
+  Type: AWS::Events::Rule
+  Properties:
+    EventBusName: !GetAtt EventBus.Arn
+    EventPattern:
+      source:
+        - "weather-app"
+      detail-type:
+        - "weather-report"
+    Targets:
+      - Arn: !GetAtt WeatherTargetSQS.Arn
+        Id: weather-event-bus-target-sqs-${sls:stage}
+
+WeatherSQSPolicy:
+  Type: AWS::SQS::QueuePolicy
+  Properties:
+    Queues:
+      - !Ref WeatherTargetSQS
+    PolicyDocument:
+      Statement:
+        - Action:
+            - "SQS:SendMessage"
+            - "SQS:ReceiveMessage"
+            - "SQS:DeleteMessage"
+            - "SQS:GetQueueAttributes"
+          Effect: "Allow"
+          Resource: !GetAtt WeatherTargetSQS.Arn
+          Principal:
+            Service: events.amazonaws.com

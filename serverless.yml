@@ -8,6 +8,7 @@ provider:
   region: us-east-1
   environment:
     DYNAMODB_TABLE_NAME: !Ref todosTable
+    WEATHER_TABLE_NAME: !Ref weatherTable
 
 # serverless plugin to associate IAM role per lamda function
 plugins:
@@ -105,5 +106,55 @@ functions:
           - "dynamodb:DeleteItem"
         Resource: !GetAtt todosTable.Arn
 
+  tranformEventLamda:
+    handler: lamdas/events/tranformEvent.handler
+    environment:
+      EventBusName: !Ref EventBus
+    events:
+      - http:
+          path: /transform
+          method: POST
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - "events:PutEvents"
+        Resource: !GetAtt EventBus.Arn
+
+  weatherDequeue:
+    handler: lamdas/api/weather.dequeue
+    events:
+      - sqs:
+          arn: !GetAtt WeatherTargetSQS.Arn
+          batchSize: 10
+          functionResponseType: "ReportBatchItemFailures"
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:GetItem"
+          - "dynamodb:PutItem"
+          - "dynamodb:UpdateItem"
+        Resource: !GetAtt weatherTable.Arn
+
+  getWeatherReport:
+    handler: lamdas/api/weather.getAllCitiesWeather
+    name: get-all-cities-weather
+    memorySize: 128 # mb
+    timeout: 5 # sec
+    environment:
+      # Reusing http connections by lamda function to reduce TLS handshake latency (keep-alive)
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    events:
+      - http:
+          path: weather
+          method: GET
+    iamRoleStatements:
+      - Effect: "Allow"
+        Action:
+          - "dynamodb:Scan"
+        Resource: !GetAtt weatherTable.Arn        
+
 resources:
   Resources: ${file(resources.yml)}
+  Outputs:
+    EventBusName:
+      Value: !Ref EventBus
